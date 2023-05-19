@@ -1,0 +1,197 @@
+---
+title: "Factors influencing life expectancy"
+author: "Group 11"
+date: "4/18/2022"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+#install.packages("tinytex")
+#library(tinytex)
+```
+
+#installing the required packages
+```{r}
+#install.packages("rlang")
+library(rlang)
+#install.packages("kableExtra")
+#install.packages("gridExtra")
+```
+```{r}
+#install.packages("scales")
+#install.packages("leaps")
+#install.packages("GGally")
+```
+```{r}
+#install.packages("MASS")
+#install.packages("lmtest")
+#install.packages("MLmetrics")
+#install.packages("car")
+```
+
+#calling the libraries
+```{r}
+#install.packages("tidyverse")
+
+#library(tidyverse) 
+```
+```{r}
+#library(data.table)
+#library(DT)
+#library(kableExtra)
+```
+```{r}
+library(gridExtra)
+library(knitr)
+library(tidyverse)
+library(caret)
+```
+
+```{r}
+#remove.packages("rlang")
+```
+```{r}
+library(psych)
+library(stats)
+library(leaps)
+#install.packages("ggplot2")
+library(ggplot2)
+library(GGally)
+```
+```{r}
+#install.packages("rlang")
+
+#library(rlang)
+```
+```{r}
+library(MASS)
+library(lmtest)
+library(car)
+library(MLmetrics)
+```
+
+#loading the dataset
+```{r}
+WHO <- read.csv("C:/Users/13176/Desktop/Life Expectancy Data.csv")
+```
+
+#data summary
+```{r}
+summary(WHO)
+```
+#descriptive statistics of the data
+```{r}
+library(psych)
+describe(WHO)
+head(WHO)
+```
+#converted the catergorical variable status to mumeric 
+#assigned 1 for developed and 0 for devoloping countries
+```{r}
+sapply(WHO, class)
+WHO$Life.expectancy<-as.numeric(WHO$Life.expectancy)
+
+WHO$Status[WHO$Status=="Developed"]=1
+WHO$Status[WHO$Status=="Developing"]=0
+```
+#box plots 
+```{r}
+library(DataExplorer)
+plot_boxplot(WHO, "Status")
+```
+```{r}
+library("ggplot2")
+library(ggthemes)
+WHO %>% 
+         keep(is.numeric) %>% 
+         gather() %>%           
+         ggplot(aes(value)) +  
+         facet_wrap(~key, scale = "free") + 
+           geom_histogram(aes(y = ..density..), color = "darkblue", fill = "lightblue") + geom_density(alpha = 0.2) + theme_economist()
+```
+#LIFE EXPECTANCY VS INCOME COMPOSITIONS OF RESOURCES GRAPH
+```{r}
+plot(y = WHO$Life.expectancy,
+     x = WHO$Income.composition.of.resources,
+     main = "LIFE EXPECTANCY VS INCOME COMPOSITIONS OF RESOURCES ",
+     xlab = "INCOME COMPOSITION",
+     ylab = "LIFE EXPECTANCY",
+     pch = 20,
+     col = "RED")
+abline(60,1,
+       col = "maroon")
+```
+#LIFE EXPECTANCY VS SCHOOLING GRAPH
+```{r}
+plot(y = WHO$Life.expectancy,
+     x = WHO$Schooling,
+     main = "LIFE EXPECTANCY VS SCHOOLING",
+     xlab = "SCHOOLING",
+     ylab = "LIFE EXPECTANCY",
+     pch = 20,
+     col = "GREEN")
+abline(50,1,
+       col = "maroon")
+```
+#LIFE EXPECTANCY VS ADULT MORTALITY GRAPH
+```{r}
+plot(y = WHO$Life.expectancy,
+     x = WHO$Adult.Mortality,
+     main = "LIFE EXPECTANCY VS ADULT MORTALITY",
+     xlab = "ADULT MORTALITY",
+     ylab = "LIFE EXPECTANCY",
+     pch = 20,
+     col = "VIOLET")
+abline(80,- 1,
+       col = "maroon")
+```
+#LIFE EXPECTANCY VS POPULATION GRAPH
+```{r}
+plot(y = WHO$Life.expectancy,
+     x = WHO$Population,
+     main = "LIFE EXPECTANCY VS POPULATION",
+     xlab = "POPULATION",
+     ylab = "LIFE EXPECTANCY",
+     pch = 20,
+     col = "PURPLE")
+abline(50,1,
+       col = "maroon")
+```
+
+#  filtering the data and group the data by country to obtain the mean life expectancy of each country over the 16 years.
+
+```{r}
+developing<-WHO %>% filter(Status=="0")%>%group_by(Country) %>%summarise(Average_life=mean(Life.expectancy))
+
+developed<-WHO%>% filter(Status=="1")%>%group_by(Country) %>%summarise(Average_life=mean(Life.expectancy))
+```
+# F-Test to check variance of the two populations
+```{r}
+var.test(developed$Average_life,developing$Average_life)
+
+#The observed p-value is less than alpha(0.05) .Hence we reject the null hypothesis and accept the alternate statement that the variance of two populations is not equal.
+```
+#two-sample T-Test for the equality of the two means
+```{r}
+t.test(developed$Average_life,developing$Average_life, alternative= "greater",var.equal = FALSE)
+#The null hypothesis is rejected against the alternative hypothesis as the p-value<0.05. Hence we conclude that life expectancy in developed countries is more than that of developing countries with 95% confidence.
+```
+#Interpretation of multiple linear regression analysis followed by regression diagnostics to identify issues with the model.
+```{r}
+mod2 = lm(Life.expectancy ~ Income.composition.of.resources + Schooling + Adult.Mortality + Population, data = WHO)
+summary(mod2)
+```
+#Anova test
+```{r}
+anova(mod2)
+```
+#plots
+```{r}
+plot(mod2)
+```
